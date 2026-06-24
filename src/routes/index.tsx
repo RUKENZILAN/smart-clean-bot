@@ -3,12 +3,25 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import * as XLSX from "xlsx";
 import Papa from "papaparse";
 import { requestPlan, type CleaningPlan } from "@/lib/clean-ai";
+import {
+  DEFAULT_MODELS,
+  PROVIDER_LABELS,
+  type Provider,
+  type ProviderConfig,
+} from "@/lib/clean-ai";
 import { applyPlan, buildChartData, parseNumber, type Row } from "@/lib/clean-apply";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 import {
@@ -60,17 +73,42 @@ export function Index() {
   const [loading, setLoading] = useState(false);
   const [planResult, setPlanResult] = useState<CleaningPlan | null>(null);
   const [log, setLog] = useState<string[]>([]);
+  const [provider, setProvider] = useState<Provider>("lovable");
   const [apiKey, setApiKey] = useState("");
+  const [model, setModel] = useState(DEFAULT_MODELS.lovable);
+  const [baseUrl, setBaseUrl] = useState("http://localhost:11434");
 
   useEffect(() => {
-    const k = localStorage.getItem("lovable_api_key");
-    if (k) setApiKey(k);
+    const p = (localStorage.getItem("ai_provider") as Provider) || "lovable";
+    setProvider(p);
+    setApiKey(localStorage.getItem(`ai_key_${p}`) ?? "");
+    setModel(localStorage.getItem(`ai_model_${p}`) ?? DEFAULT_MODELS[p]);
+    setBaseUrl(localStorage.getItem("ai_ollama_url") ?? "http://localhost:11434");
   }, []);
+
+  function changeProvider(p: Provider) {
+    setProvider(p);
+    localStorage.setItem("ai_provider", p);
+    const savedKey = localStorage.getItem(`ai_key_${p}`) ?? "";
+    const savedModel = localStorage.getItem(`ai_model_${p}`) ?? DEFAULT_MODELS[p];
+    setApiKey(savedKey);
+    setModel(savedModel);
+  }
 
   function saveKey(v: string) {
     setApiKey(v);
-    if (v) localStorage.setItem("lovable_api_key", v);
-    else localStorage.removeItem("lovable_api_key");
+    if (v) localStorage.setItem(`ai_key_${provider}`, v);
+    else localStorage.removeItem(`ai_key_${provider}`);
+  }
+
+  function saveModel(v: string) {
+    setModel(v);
+    if (v) localStorage.setItem(`ai_model_${provider}`, v);
+  }
+
+  function saveBaseUrl(v: string) {
+    setBaseUrl(v);
+    localStorage.setItem("ai_ollama_url", v);
   }
 
   async function handleFile(file: File) {
@@ -111,19 +149,25 @@ export function Index() {
       toast.error("Talimat yaz / Write an instruction");
       return;
     }
-    if (!apiKey.trim()) {
-      toast.error("Lovable AI API anahtarını gir / Enter your Lovable AI API key");
+    if (provider !== "ollama" && !apiKey.trim()) {
+      toast.error("API anahtarını gir / Enter your API key");
       return;
     }
     setLoading(true);
     try {
       const sample = rawRows.slice(0, 20);
+      const config: ProviderConfig = {
+        provider,
+        apiKey: apiKey.trim(),
+        model: model.trim() || DEFAULT_MODELS[provider],
+        baseUrl: baseUrl.trim(),
+      };
       const result = await requestPlan({
         columns,
         sample,
         rowCount: rawRows.length,
         instruction,
-        apiKey: apiKey.trim(),
+        config,
       });
       setPlanResult(result);
       const { rows, log: applyLog } = applyPlan(rawRows, result);
@@ -202,26 +246,79 @@ export function Index() {
 
       <main className="mx-auto max-w-6xl px-6 py-10 space-y-6">
         {/* API Key */}
-        <Card className="p-4 flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
-          <div className="flex items-center gap-2 sm:w-64">
+        <Card className="p-4 space-y-3">
+          <div className="flex items-center gap-2">
             <KeyRound className="size-4 text-primary" />
-            <span className="text-sm font-medium">Lovable AI API Key</span>
+            <span className="text-sm font-medium">AI Sağlayıcı / Provider</span>
           </div>
-          <Input
-            type="password"
-            value={apiKey}
-            onChange={(e) => saveKey(e.target.value)}
-            placeholder="sk-... (tarayıcıda saklanır / stored in your browser only)"
-            className="flex-1"
-          />
-          <a
-            href="https://lovable.dev/settings/workspace"
-            target="_blank"
-            rel="noreferrer"
-            className="text-xs text-primary underline whitespace-nowrap"
-          >
-            Anahtar al / Get key
-          </a>
+          <div className="grid gap-3 sm:grid-cols-[200px_1fr]">
+            <Select value={provider} onValueChange={(v) => changeProvider(v as Provider)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {(Object.keys(PROVIDER_LABELS) as Provider[]).map((p) => (
+                  <SelectItem key={p} value={p}>
+                    {PROVIDER_LABELS[p]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Input
+              type="password"
+              value={apiKey}
+              onChange={(e) => saveKey(e.target.value)}
+              placeholder={
+                provider === "ollama"
+                  ? "API key (opsiyonel / optional)"
+                  : "API key (tarayıcıda saklanır / stored in your browser only)"
+              }
+            />
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <Input
+              value={model}
+              onChange={(e) => saveModel(e.target.value)}
+              placeholder={`Model (örn / e.g. ${DEFAULT_MODELS[provider]})`}
+            />
+            {provider === "ollama" && (
+              <Input
+                value={baseUrl}
+                onChange={(e) => saveBaseUrl(e.target.value)}
+                placeholder="http://localhost:11434"
+              />
+            )}
+            {provider !== "ollama" && (
+              <a
+                href={
+                  provider === "lovable"
+                    ? "https://lovable.dev/settings/workspace"
+                    : provider === "gemini"
+                    ? "https://aistudio.google.com/apikey"
+                    : provider === "claude"
+                    ? "https://console.anthropic.com/settings/keys"
+                    : "https://platform.openai.com/api-keys"
+                }
+                target="_blank"
+                rel="noreferrer"
+                className="text-xs text-primary underline self-center"
+              >
+                {PROVIDER_LABELS[provider]} anahtarı al / Get API key →
+              </a>
+            )}
+          </div>
+          {provider === "claude" && (
+            <p className="text-xs text-muted-foreground">
+              ⚠️ Claude tarayıcıdan doğrudan çağrılır (CORS gerektirir). Üretimde proxy kullan.
+              <br />
+              <span className="opacity-70">Claude is called directly from the browser (requires CORS). Use a proxy in production.</span>
+            </p>
+          )}
+          {provider === "ollama" && (
+            <p className="text-xs text-muted-foreground">
+              Ollama'yı <code>OLLAMA_ORIGINS="*" ollama serve</code> ile başlat.
+            </p>
+          )}
         </Card>
 
         {/* Upload */}
