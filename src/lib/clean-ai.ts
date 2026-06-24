@@ -34,6 +34,31 @@ export const PlanSchema = z.object({
 
 export type CleaningPlan = z.infer<typeof PlanSchema>;
 
+export type Provider = "lovable" | "gemini" | "claude" | "openai" | "ollama";
+
+export interface ProviderConfig {
+  provider: Provider;
+  apiKey: string;
+  model: string;
+  baseUrl?: string; // for ollama / custom openai-compatible
+}
+
+export const DEFAULT_MODELS: Record<Provider, string> = {
+  lovable: "google/gemini-3-flash-preview",
+  gemini: "gemini-2.0-flash",
+  claude: "claude-3-5-sonnet-latest",
+  openai: "gpt-4o-mini",
+  ollama: "llama3.1",
+};
+
+export const PROVIDER_LABELS: Record<Provider, string> = {
+  lovable: "Lovable AI",
+  gemini: "Google Gemini",
+  claude: "Anthropic Claude",
+  openai: "OpenAI",
+  ollama: "Ollama (local)",
+};
+
 const SYSTEM = `You are a data cleaning assistant. Given a dataset preview and a user request (which may be in any language, often Turkish), produce a cleaning plan as structured JSON.
 
 Rules:
@@ -74,8 +99,7 @@ export interface PlanInput {
   sample: Record<string, unknown>[];
   rowCount: number;
   instruction: string;
-  apiKey: string;
-  model?: string;
+  config: ProviderConfig;
 }
 
 export async function requestPlan(input: PlanInput): Promise<CleaningPlan> {
@@ -87,26 +111,105 @@ ${JSON.stringify(input.sample, null, 2)}
 User instruction:
 ${input.instruction}`;
 
-  const res = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+  const content = await callProvider(input.config, SYSTEM, prompt);
+  return PlanSchema.parse(extractJson(content));
+}
+
+async function callProvider(cfg: ProviderConfig, system: string, user: string): Promise<string> {
+  const model = cfg.model || DEFAULT_MODELS[cfg.provider];
+
+  if (cfg.provider === "lovable") {
+    return openAiCompatible({
+      url: "https://ai.gateway.lovable.dev/v1/chat/completions",
+      headers: { "Lovable-API-Key": cfg.apiKey },
+      model,
+      system,
+      user,
+    });
+  }
+
+  if (cfg.provider === "openai") {
+    return openAiCompatible({
+      url: "https://api.openai.com/v1/chat/completions",
+      headers: { Authorization: `Bearer ${cfg.apiKey}` },
+      model,
+      system,
+      user,
+    });
+  }
+
+  if (cfg.provider === "ollama") {
+    const base = (cfg.baseUrl || "http://localhost:11434").replace(/\/$/, "");
+    return openAiCompatible({
+      url: `${base}/v1/chat/completions`,
+      headers: cfg.apiKey ? { Authorization: `Bearer ${cfg.apiKey}` } : {},
+      model,
+      system,
+      user,
+    });
+  }
+
+  if (cfg.provider === "gemini") {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(cfg.apiKey)}`;
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: system }] },
+        contents: [{ role: "user", parts: [{ text: user }] }],
+        generationConfig: { responseMimeType: "application/json" },
+      }),
+    });
+    if (!res.ok) throw new Error(`${res.status} ${(await res.text()).slice(0, 300)}`);
+    const j = (await res.json()) as {
+      candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+    };
+    return j.candidates?.[0]?.content?.parts?.map((p) => p.text ?? "").join("") ?? "";
+  }
+
+  if (cfg.provider === "claude") {
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": cfg.apiKey,
+        "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-access": "true",
+      },
+      body: JSON.stringify({
+        model,
+        max_tokens: 4096,
+        system,
+        messages: [{ role: "user", content: user }],
+      }),
+    });
+    if (!res.ok) throw new Error(`${res.status} ${(await res.text()).slice(0, 300)}`);
+    const j = (await res.json()) as { content?: Array<{ text?: string }> };
+    return j.content?.map((c) => c.text ?? "").join("") ?? "";
+  }
+
+  throw new Error("Unknown provider");
+}
+
+async function openAiCompatible(opts: {
+  url: string;
+  headers: Record<string, string>;
+  model: string;
+  system: string;
+  user: string;
+}): Promise<string> {
+  const res = await fetch(opts.url, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Lovable-API-Key": input.apiKey,
-    },
+    headers: { "Content-Type": "application/json", ...opts.headers },
     body: JSON.stringify({
-      model: input.model ?? "google/gemini-3-flash-preview",
+      model: opts.model,
       messages: [
-        { role: "system", content: SYSTEM },
-        { role: "user", content: prompt },
+        { role: "system", content: opts.system },
+        { role: "user", content: opts.user },
       ],
     }),
   });
-
-  if (!res.ok) {
-    const txt = await res.text().catch(() => "");
-    throw new Error(`${res.status} ${txt.slice(0, 300)}`);
-  }
-  const json = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
-  const content = json.choices?.[0]?.message?.content ?? "";
-  return PlanSchema.parse(extractJson(content));
+  if (!res.ok) throw new Error(`${res.status} ${(await res.text()).slice(0, 300)}`);
+  const j = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
+  return j.choices?.[0]?.message?.content ?? "";
 }
