@@ -1,12 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import * as XLSX from "xlsx";
 import Papa from "papaparse";
-import { useServerFn } from "@tanstack/react-start";
-import { planCleaning, type CleaningPlan } from "@/lib/clean.functions";
+import { requestPlan, type CleaningPlan } from "@/lib/clean-ai";
 import { applyPlan, buildChartData, parseNumber, type Row } from "@/lib/clean-apply";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
@@ -25,7 +25,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { Upload, Sparkles, Download, FileSpreadsheet, Loader2, Wand2 } from "lucide-react";
+import { Upload, Sparkles, Download, FileSpreadsheet, Loader2, Wand2, KeyRound } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -46,7 +46,6 @@ export const Route = createFileRoute("/")({
 const CHART_COLORS = ["#06b6d4", "#0ea5e9", "#14b8a6", "#22c55e", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899"];
 
 function Index() {
-  const plan = useServerFn(planCleaning);
   const fileRef = useRef<HTMLInputElement>(null);
   const [fileName, setFileName] = useState<string | null>(null);
   const [columns, setColumns] = useState<string[]>([]);
@@ -58,6 +57,18 @@ function Index() {
   const [loading, setLoading] = useState(false);
   const [planResult, setPlanResult] = useState<CleaningPlan | null>(null);
   const [log, setLog] = useState<string[]>([]);
+  const [apiKey, setApiKey] = useState("");
+
+  useEffect(() => {
+    const k = localStorage.getItem("lovable_api_key");
+    if (k) setApiKey(k);
+  }, []);
+
+  function saveKey(v: string) {
+    setApiKey(v);
+    if (v) localStorage.setItem("lovable_api_key", v);
+    else localStorage.removeItem("lovable_api_key");
+  }
 
   async function handleFile(file: File) {
     setFileName(file.name);
@@ -97,11 +108,19 @@ function Index() {
       toast.error("Ne yapmamı istediğini yaz");
       return;
     }
+    if (!apiKey.trim()) {
+      toast.error("Önce Lovable AI API anahtarını gir");
+      return;
+    }
     setLoading(true);
     try {
       const sample = rawRows.slice(0, 20);
-      const result = await plan({
-        data: { columns, sample, rowCount: rawRows.length, instruction },
+      const result = await requestPlan({
+        columns,
+        sample,
+        rowCount: rawRows.length,
+        instruction,
+        apiKey: apiKey.trim(),
       });
       setPlanResult(result);
       const { rows, log: applyLog } = applyPlan(rawRows, result);
@@ -175,6 +194,29 @@ function Index() {
       </header>
 
       <main className="mx-auto max-w-6xl px-6 py-10 space-y-6">
+        {/* API Key */}
+        <Card className="p-4 flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
+          <div className="flex items-center gap-2 sm:w-64">
+            <KeyRound className="size-4 text-primary" />
+            <span className="text-sm font-medium">Lovable AI API Key</span>
+          </div>
+          <Input
+            type="password"
+            value={apiKey}
+            onChange={(e) => saveKey(e.target.value)}
+            placeholder="sk-... (tarayıcında saklanır, sunucuya gönderilmez)"
+            className="flex-1"
+          />
+          <a
+            href="https://lovable.dev/settings/workspace"
+            target="_blank"
+            rel="noreferrer"
+            className="text-xs text-primary underline whitespace-nowrap"
+          >
+            Anahtar al
+          </a>
+        </Card>
+
         {/* Upload */}
         <Card className="p-6">
           <div className="flex flex-col md:flex-row gap-6 items-stretch">
