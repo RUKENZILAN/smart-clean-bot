@@ -45,7 +45,7 @@ export const Route = createFileRoute("/")({
 
 const CHART_COLORS = ["#06b6d4", "#0ea5e9", "#14b8a6", "#22c55e", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899"];
 
-function Index() {
+export function Index() {
   const fileRef = useRef<HTMLInputElement>(null);
   const [fileName, setFileName] = useState<string | null>(null);
   const [columns, setColumns] = useState<string[]>([]);
