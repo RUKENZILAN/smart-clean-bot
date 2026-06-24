@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { generateText, Output } from "ai";
+import { generateText } from "ai";
 import { z } from "zod";
 import { createLovableAiGatewayProvider } from "./ai-gateway.server";
 
@@ -77,12 +77,28 @@ ${JSON.stringify(data.sample, null, 2)}
 User instruction:
 ${data.instruction}`;
 
-    const { experimental_output } = await generateText({
+    const { text } = await generateText({
       model: gateway("google/gemini-3-flash-preview"),
-      system,
+      system: system + "\n\nRespond ONLY with valid minified JSON matching this TypeScript type, no markdown, no commentary:\n{summary:string; operations:Array<{column:string; action:'trim'|'lowercase'|'uppercase'|'to_number'|'to_date'|'fill_mean'|'fill_median'|'fill_mode'|'fill_value'|'drop_empty_rows'|'remove_duplicates'; value?:string}>; chart:null|{type:'bar'|'line'|'pie'; xColumn:string; yColumn:string; aggregation:'sum'|'avg'|'count'; title:string}}",
       prompt,
-      experimental_output: Output.object({ schema: PlanSchema }),
     });
 
-    return experimental_output;
+    const parsed = extractJson(text);
+    return PlanSchema.parse(parsed);
   });
+
+function extractJson(response: string): unknown {
+  let cleaned = response.replace(/```json\s*/gi, "").replace(/```\s*/g, "").trim();
+  const start = cleaned.search(/[\{\[]/);
+  const openChar = start !== -1 ? cleaned[start] : "";
+  const endChar = openChar === "[" ? "]" : "}";
+  const end = cleaned.lastIndexOf(endChar);
+  if (start === -1 || end === -1) throw new Error("AI did not return JSON: " + response.slice(0, 200));
+  cleaned = cleaned.substring(start, end + 1);
+  try {
+    return JSON.parse(cleaned);
+  } catch {
+    const repaired = cleaned.replace(/,\s*}/g, "}").replace(/,\s*]/g, "]");
+    return JSON.parse(repaired);
+  }
+}
