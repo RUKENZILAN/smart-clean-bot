@@ -30,15 +30,18 @@ import { Upload, Sparkles, Download, FileSpreadsheet, Loader2, Wand2, KeyRound }
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Veri Temizleyici — AI ile CSV & Excel temizleme" },
+      { title: "CleanCSV — AI ile CSV & Excel temizleme" },
       {
         name: "description",
         content:
-          "Karmaşık CSV ve Excel dosyalarını yapay zeka ile saniyeler içinde temizle, dönüştür ve görselleştir.",
+          "CleanCSV: karmaşık CSV ve Excel dosyalarını yapay zeka ile saniyeler içinde temizle, dönüştür ve görselleştir.",
       },
-      { property: "og:title", content: "Veri Temizleyici" },
-      { property: "og:description", content: "AI destekli veri temizleme ve hızlı analiz." },
+      { property: "og:title", content: "CleanCSV" },
+      { property: "og:description", content: "AI destekli CSV & Excel temizleme ve hızlı analiz." },
+      { property: "og:type", content: "website" },
+      { property: "og:url", content: "https://smart-clean-bot.lovable.app/" },
     ],
+    links: [{ rel: "canonical", href: "https://smart-clean-bot.lovable.app/" }],
   }),
   component: Index,
 });
@@ -187,7 +190,7 @@ export function Index() {
             <Wand2 className="size-5 text-primary" />
           </div>
           <div>
-            <h1 className="text-lg font-semibold tracking-tight">Veri Temizleyici</h1>
+            <h1 className="text-lg font-semibold tracking-tight">CleanCSV</h1>
             <p className="text-xs text-muted-foreground">AI ile CSV & Excel temizleme · analiz · grafik</p>
           </div>
         </div>
