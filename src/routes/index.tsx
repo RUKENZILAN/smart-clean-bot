@@ -396,4 +396,3 @@ function Stat({ label, value }: { label: string; value: string }) {
 
 // Avoid tree-shaking the helper while keeping public API clean
 void parseNumber;
-}
