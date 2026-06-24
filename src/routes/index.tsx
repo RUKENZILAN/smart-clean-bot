@@ -194,6 +194,29 @@ function Index() {
       </header>
 
       <main className="mx-auto max-w-6xl px-6 py-10 space-y-6">
+        {/* API Key */}
+        <Card className="p-4 flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
+          <div className="flex items-center gap-2 sm:w-64">
+            <KeyRound className="size-4 text-primary" />
+            <span className="text-sm font-medium">Lovable AI API Key</span>
+          </div>
+          <Input
+            type="password"
+            value={apiKey}
+            onChange={(e) => saveKey(e.target.value)}
+            placeholder="sk-... (tarayıcında saklanır, sunucuya gönderilmez)"
+            className="flex-1"
+          />
+          <a
+            href="https://lovable.dev/settings/workspace"
+            target="_blank"
+            rel="noreferrer"
+            className="text-xs text-primary underline whitespace-nowrap"
+          >
+            Anahtar al
+          </a>
+        </Card>
+
         {/* Upload */}
         <Card className="p-6">
           <div className="flex flex-col md:flex-row gap-6 items-stretch">
