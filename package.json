@@ -8,6 +8,8 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
+    "build:gh": "vite build --config vite.gh.config.ts",
+    "preview:gh": "vite preview --config vite.gh.config.ts",
     "lint": "eslint .",
     "format": "prettier --write ."
   },
