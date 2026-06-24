@@ -426,9 +426,9 @@ export function Index() {
         )}
 
         {!rawRows.length && (
-          <div className="text-center text-sm text-muted-foreground py-6">
-            Başlamak için bir CSV veya Excel dosyası yükle. Veriler tarayıcında işlenir; AI'ya yalnızca
-            küçük bir örnek ve sütun adları gönderilir.
+          <div className="text-center text-sm text-muted-foreground py-6 space-y-1">
+            <p>Başlamak için bir CSV veya Excel dosyası yükle. Veriler tarayıcıda işlenir; AI'ya yalnızca küçük bir örnek ve sütun adları gönderilir.</p>
+            <p className="opacity-70">Upload a CSV or Excel file to start. Data is processed in your browser; only a small sample and column names are sent to the AI.</p>
           </div>
         )}
       </main>
