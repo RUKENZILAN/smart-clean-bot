@@ -1,4 +1,4 @@
-import type { CleaningPlan } from "./clean.functions";
+import type { CleaningPlan } from "./clean-ai";
 
 export type Row = Record<string, unknown>;
 
