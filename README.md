@@ -10,7 +10,13 @@ Check it out: https://rukenzilan.github.io/smart-clean-bot/
 ## Features
 
 - Parse CSV and Excel (`.xlsx`, `.xls`) files locally — data never leaves your browser
-- Bring your own OpenAI-compatible API key (stored in `localStorage` only)
+- **Multi-provider AI** — choose your own backend:
+  - Lovable AI Gateway
+  - Google Gemini (AI Studio)
+  - Anthropic Claude
+  - OpenAI
+  - Ollama (run models locally, no API key needed)
+- API keys are stored only in your browser's `localStorage`
 - Natural language instructions: fix dates, fill blanks, normalize columns, etc.
 - Preview cleaned data before downloading
 - Bilingual UI (Türkçe / English)
@@ -41,11 +47,20 @@ Pushing to `main` triggers `.github/workflows/deploy.yml`, which runs `build:gh`
 
 ## Usage
 
-1. Paste your OpenAI-compatible API key (get one at platform.openai.com)
-2. Drop or select a CSV / Excel file
-3. Describe what to clean in the instruction box
-4. Review the AI plan and cleaned preview
-5. Download the result
+1. Pick an AI provider and paste the matching API key:
+   - **Lovable AI** → https://lovable.dev/settings/workspace
+   - **Gemini** → https://aistudio.google.com/apikey
+   - **Claude** → https://console.anthropic.com/settings/keys
+   - **OpenAI** → https://platform.openai.com/api-keys
+   - **Ollama** → start it locally with `OLLAMA_ORIGINS="*" ollama serve` (no key required)
+2. Optionally override the model name (defaults are filled in per provider).
+3. Drop or select a CSV / Excel file.
+4. Describe what to clean in the instruction box.
+5. Review the AI plan and cleaned preview, then download the result.
+
+> **Note on Claude:** the browser calls the Anthropic API directly using the
+> `anthropic-dangerous-direct-browser-access` header. This is fine for personal
+> use but you should put a proxy in front of it for production.
 
 ## License
 
