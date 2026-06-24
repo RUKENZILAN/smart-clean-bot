@@ -96,23 +96,23 @@ export function Index() {
       }
       setColumns(cols);
       setRawRows(rows);
-      toast.success(`${rows.length} satır, ${cols.length} sütun yüklendi`);
+      toast.success(`${rows.length} satır / rows, ${cols.length} sütun / columns`);
     } catch (e) {
-      toast.error("Dosya okunamadı: " + (e as Error).message);
+      toast.error("Dosya okunamadı / Could not read file: " + (e as Error).message);
     }
   }
 
   async function runClean() {
     if (!rawRows.length) {
-      toast.error("Önce bir dosya yükle");
+      toast.error("Önce bir dosya yükle / Upload a file first");
       return;
     }
     if (!instruction.trim()) {
-      toast.error("Ne yapmamı istediğini yaz");
+      toast.error("Talimat yaz / Write an instruction");
       return;
     }
     if (!apiKey.trim()) {
-      toast.error("Önce Lovable AI API anahtarını gir");
+      toast.error("Lovable AI API anahtarını gir / Enter your Lovable AI API key");
       return;
     }
     setLoading(true);
@@ -129,12 +129,12 @@ export function Index() {
       const { rows, log: applyLog } = applyPlan(rawRows, result);
       setCleanedRows(rows);
       setLog(applyLog);
-      toast.success("Temizleme tamamlandı");
+      toast.success("Temizleme tamamlandı / Cleaning complete");
     } catch (e) {
       const msg = (e as Error).message || "Hata";
-      if (msg.includes("429")) toast.error("İstek limiti aşıldı, biraz bekle");
-      else if (msg.includes("402")) toast.error("AI kredisi bitti. Çalışma alanı ayarlarından kredi ekleyebilirsin.");
-      else toast.error("AI hatası: " + msg);
+      if (msg.includes("429")) toast.error("İstek limiti aşıldı / Rate limit exceeded");
+      else if (msg.includes("402")) toast.error("AI kredisi bitti / AI credits exhausted");
+      else toast.error("AI hatası / AI error: " + msg);
     } finally {
       setLoading(false);
     }
@@ -191,7 +191,11 @@ export function Index() {
           </div>
           <div>
             <h1 className="text-lg font-semibold tracking-tight">CleanCSV</h1>
-            <p className="text-xs text-muted-foreground">AI ile CSV & Excel temizleme · analiz · grafik</p>
+            <p className="text-xs text-muted-foreground">
+              AI ile CSV & Excel temizleme · analiz · grafik
+              <br />
+              <span className="opacity-70">AI-powered CSV & Excel cleaning · analysis · charts</span>
+            </p>
           </div>
         </div>
       </header>
@@ -207,7 +211,7 @@ export function Index() {
             type="password"
             value={apiKey}
             onChange={(e) => saveKey(e.target.value)}
-            placeholder="sk-... (tarayıcında saklanır, sunucuya gönderilmez)"
+            placeholder="sk-... (tarayıcıda saklanır / stored in your browser only)"
             className="flex-1"
           />
           <a
@@ -216,7 +220,7 @@ export function Index() {
             rel="noreferrer"
             className="text-xs text-primary underline whitespace-nowrap"
           >
-            Anahtar al
+            Anahtar al / Get key
           </a>
         </Card>
 
@@ -245,16 +249,16 @@ export function Index() {
               />
               <Upload className="size-8 mx-auto text-muted-foreground mb-2" />
               <p className="text-sm font-medium">
-                {fileName ?? "CSV veya Excel dosyası bırak / seç"}
+                {fileName ?? "CSV veya Excel dosyası bırak / Drop or select a CSV or Excel file"}
               </p>
-              <p className="text-xs text-muted-foreground mt-1">.csv, .xlsx, .xls desteklenir</p>
+              <p className="text-xs text-muted-foreground mt-1">.csv, .xlsx, .xls desteklenir / supported</p>
             </div>
 
             {stats && (
               <div className="md:w-64 grid grid-cols-3 md:grid-cols-1 gap-3">
-                <Stat label="Satır" value={stats.rows.toLocaleString()} />
-                <Stat label="Sütun" value={stats.cols.toString()} />
-                <Stat label="Boş hücre" value={stats.emptyPct.toFixed(1) + "%"} />
+                <Stat label="Satır / Rows" value={stats.rows.toLocaleString()} />
+                <Stat label="Sütun / Columns" value={stats.cols.toString()} />
+                <Stat label="Boş hücre / Empty" value={stats.emptyPct.toFixed(1) + "%"} />
               </div>
             )}
           </div>
@@ -265,26 +269,28 @@ export function Index() {
           <Card className="p-6 space-y-4">
             <div className="flex items-center gap-2">
               <Sparkles className="size-4 text-primary" />
-              <h2 className="font-medium">Ne yapmamı istersin?</h2>
+              <h2 className="font-medium">Ne yapmamı istersin? / What should I do?</h2>
             </div>
             <Textarea
               value={instruction}
               onChange={(e) => setInstruction(e.target.value)}
               rows={3}
-              placeholder="Örn: Tarih formatlarını düzelt, boş satırları doldur, müşteri harcamalarının grafiğini çıkar"
+              placeholder="Örn / e.g.: Tarih formatlarını düzelt, boş satırları doldur, müşteri harcamalarının grafiğini çıkar — Fix date formats, fill empty rows, chart customer spending"
             />
             <div className="flex justify-between items-center">
               <p className="text-xs text-muted-foreground">
-                AI yalnızca veri yapısının önizlemesini (ilk 20 satır + sütun adları) görür.
+                AI yalnızca ilk 20 satır + sütun adlarını görür.
+                <br />
+                <span className="opacity-70">AI only sees the first 20 rows + column names.</span>
               </p>
               <Button onClick={runClean} disabled={loading} size="lg">
                 {loading ? (
                   <>
-                    <Loader2 className="size-4 animate-spin" /> Temizleniyor...
+                    <Loader2 className="size-4 animate-spin" /> Temizleniyor / Cleaning...
                   </>
                 ) : (
                   <>
-                    <Wand2 className="size-4" /> Temizle & Analiz Et
+                    <Wand2 className="size-4" /> Temizle & Analiz / Clean & Analyze
                   </>
                 )}
               </Button>
@@ -296,7 +302,7 @@ export function Index() {
         {planResult && (
           <Card className="p-6 space-y-4">
             <div>
-              <h2 className="font-medium mb-2">AI'nın planı</h2>
+              <h2 className="font-medium mb-2">AI'nın planı / AI plan</h2>
               <p className="text-sm text-muted-foreground">{planResult.summary}</p>
             </div>
             {planResult.operations.length > 0 && (
@@ -364,11 +370,11 @@ export function Index() {
             <div className="flex justify-between items-center">
               <div>
                 <h2 className="font-medium">
-                  {cleanedRows ? "Temizlenmiş veri" : "Önizleme"}
+                  {cleanedRows ? "Temizlenmiş veri / Cleaned data" : "Önizleme / Preview"}
                 </h2>
                 <p className="text-xs text-muted-foreground">
-                  İlk {previewRows.length} satır gösteriliyor
-                  {cleanedRows ? ` · toplam ${cleanedRows.length} satır` : ""}
+                  İlk / First {previewRows.length} satır / rows
+                  {cleanedRows ? ` · toplam / total ${cleanedRows.length}` : ""}
                 </p>
               </div>
               {cleanedRows && (
@@ -420,9 +426,9 @@ export function Index() {
         )}
 
         {!rawRows.length && (
-          <div className="text-center text-sm text-muted-foreground py-6">
-            Başlamak için bir CSV veya Excel dosyası yükle. Veriler tarayıcında işlenir; AI'ya yalnızca
-            küçük bir örnek ve sütun adları gönderilir.
+          <div className="text-center text-sm text-muted-foreground py-6 space-y-1">
+            <p>Başlamak için bir CSV veya Excel dosyası yükle. Veriler tarayıcıda işlenir; AI'ya yalnızca küçük bir örnek ve sütun adları gönderilir.</p>
+            <p className="opacity-70">Upload a CSV or Excel file to start. Data is processed in your browser; only a small sample and column names are sent to the AI.</p>
           </div>
         )}
       </main>
