@@ -4,6 +4,9 @@ AI-powered CSV & Excel cleaner that runs entirely in the browser. Drop in a mess
 
 CleanCSV / Tarayıcıda çalışan, yapay zeka destekli CSV ve Excel temizleme aracı. Dosyanızı bırakın, ne istediğinizi yazın, temizlenmiş veriyi indirin.
 
+Check it out: https://rukenzilan.github.io/smart-clean-bot/
+
+
 ## Features
 
 - Parse CSV and Excel (`.xlsx`, `.xls`) files locally — data never leaves your browser
