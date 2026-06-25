@@ -245,25 +245,6 @@ export function Index() {
       </header>
 
       <main className="mx-auto max-w-6xl px-6 py-10 space-y-6">
-        {/* Intro */}
-        <Card className="p-6 space-y-3 bg-gradient-to-br from-primary/5 to-transparent border-primary/20">
-          <h2 className="text-xl font-semibold tracking-tight">
-            Clean messy spreadsheets with plain English
-          </h2>
-          <p className="text-sm text-muted-foreground leading-relaxed">
-            CleanCSV is a privacy-first data cleaning tool for analysts, researchers,
-            and anyone tired of wrestling with messy CSV or Excel files. Drop in a
-            spreadsheet, describe what you want fixed in plain language — &quot;trim
-            whitespace&quot;, &quot;convert dates to ISO format&quot;, &quot;fill empty cities with
-            Unknown&quot; — and download the cleaned result. Everything runs in your
-            browser: the file is parsed locally and the AI provider you choose is
-            called directly from the client with your own API key. No upload server,
-            no data retention. Pick <b>Lovable AI</b> for zero setup, bring your own
-            <b> Gemini / Claude / OpenAI</b> key, or run <b>Ollama</b> locally for a
-            fully offline pipeline.
-          </p>
-        </Card>
-
         {/* API Key */}
         <Card className="p-4 space-y-3">
           <div className="flex items-center gap-2">
