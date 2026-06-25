@@ -6,6 +6,14 @@ CleanCSV / Tarayıcıda çalışan, yapay zeka destekli CSV ve Excel temizleme a
 
 Check it out: https://rukenzilan.github.io/smart-clean-bot/
 
+## About
+
+CleanCSV is a privacy-first data cleaning tool built for analysts, researchers, and anyone tired of wrestling with messy spreadsheets. Instead of writing pandas scripts or hunting through Excel menus, you just drop in your file, describe what you want in plain language ("trim whitespace from names", "convert dates to ISO format", "fill empty city cells with Unknown"), and let an AI model produce a clean, downloadable result.
+
+Everything runs in your browser — your CSV or Excel file is parsed locally with `papaparse` and `xlsx`, and the AI provider you choose is called directly from the client using your own API key. No backend, no upload server, no data retention. If you'd rather not send anything to a third party at all, plug in a local **Ollama** model and the entire pipeline stays on your machine.
+
+You stay in control of cost and model choice: pick **Lovable AI Gateway** for zero-setup access, **Gemini / Claude / OpenAI** to use a provider you already pay for, or **Ollama** for fully offline cleaning. Switch providers at any time from the dropdown — keys and model preferences are remembered per provider in `localStorage`.
+
 
 ## Features
 
