@@ -89,9 +89,57 @@ function extractJson(response: string): unknown {
   try {
     return JSON.parse(cleaned);
   } catch {
-    const repaired = cleaned.replace(/,\s*}/g, "}").replace(/,\s*]/g, "]");
-    return JSON.parse(repaired);
+    let repaired = cleaned.replace(/,\s*}/g, "}").replace(/,\s*]/g, "]");
+    // Escape raw control chars inside string literals (newlines, tabs, etc.)
+    repaired = escapeControlCharsInStrings(repaired);
+    try {
+      return JSON.parse(repaired);
+    } catch {
+      // Last resort: strip remaining control chars
+      return JSON.parse(repaired.replace(/[\x00-\x1F\x7F]/g, " "));
+    }
   }
+}
+
+function escapeControlCharsInStrings(src: string): string {
+  let out = "";
+  let inStr = false;
+  let escape = false;
+  for (let i = 0; i < src.length; i++) {
+    const ch = src[i];
+    if (inStr) {
+      if (escape) {
+        out += ch;
+        escape = false;
+        continue;
+      }
+      if (ch === "\\") {
+        out += ch;
+        escape = true;
+        continue;
+      }
+      if (ch === '"') {
+        out += ch;
+        inStr = false;
+        continue;
+      }
+      const code = ch.charCodeAt(0);
+      if (code < 0x20) {
+        if (ch === "\n") out += "\\n";
+        else if (ch === "\r") out += "\\r";
+        else if (ch === "\t") out += "\\t";
+        else if (ch === "\b") out += "\\b";
+        else if (ch === "\f") out += "\\f";
+        else out += "\\u" + code.toString(16).padStart(4, "0");
+        continue;
+      }
+      out += ch;
+    } else {
+      if (ch === '"') inStr = true;
+      out += ch;
+    }
+  }
+  return out;
 }
 
 export interface PlanInput {
